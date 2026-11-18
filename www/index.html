@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#2563eb" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="icon" href="icon-192.png" />
+  <title>EngiCalc — Simple Engineering Calculator</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200">
+
+  <!-- Simple Top Header -->
+  <header class="bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800 sticky top-0 z-20">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <!-- Brand -->
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <span class="font-bold text-lg tracking-tight text-slate-900 dark:text-white">EngiCalc</span>
+      </div>
+
+      <!-- Theme Toggle -->
+      <button id="themeToggle" type="button" aria-label="Toggle Dark Mode" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition">
+        <svg class="w-5 h-5 hidden dark:block text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+      </button>
+    </div>
+
+    <!-- Clean 2-Tab Navigation -->
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 pb-3 pt-1">
+      <div class="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 dark:bg-slate-800/90 rounded-2xl">
+        <button id="tabLoopBtn" type="button" class="py-2.5 px-4 rounded-xl text-sm font-semibold transition-all bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm">
+          4–20 mA Calculator
+        </button>
+        <button id="tabConvBtn" type="button" class="py-2.5 px-4 rounded-xl text-sm font-medium transition-all text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+          Unit Converter
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Simple Copy Notification -->
+  <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 transform translate-y-16 opacity-0 pointer-events-none transition-all duration-200 bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-full shadow-lg text-sm font-medium flex items-center gap-2">
+    <svg class="w-4 h-4 text-emerald-400 dark:text-emerald-600" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+    </svg>
+    <span id="toastText">Copied</span>
+  </div>
+
+  <!-- Main Centered Container -->
+  <main class="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+
+    <!-- ========================================================= -->
+    <!-- TAB 1: 4-20 mA CALCULATOR (ULTRA-CLEAN)                   -->
+    <!-- ========================================================= -->
+    <section id="viewLoop" class="space-y-6">
+
+      <!-- Mode Switch: Linear vs Square Root -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div>
+          <span class="text-sm font-semibold text-slate-800 dark:text-slate-100 block">Signal Type</span>
+          <span id="modeHelperText" class="text-xs text-slate-500 dark:text-slate-400">Standard direct proportional scaling</span>
+        </div>
+        <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl shrink-0">
+          <button id="modeLinear" type="button" class="px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-blue-600 text-white shadow-sm transition">
+            Linear
+          </button>
+          <button id="modeSqrt" type="button" class="px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition">
+            Square Root (DP Flow)
+          </button>
+        </div>
+      </div>
+
+      <!-- Step 1: Set Range -->
+      <div class="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Step 1 · Set Instrument Range</h2>
+          <button id="resetLoopBtn" type="button" class="text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline">Reset</button>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label for="lrvInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">0% / 4 mA Value (LRV)</label>
+            <input type="number" step="any" id="lrvInput" value="0" class="w-full font-mono text-lg font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition" />
+          </div>
+          <div>
+            <label for="urvInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">100% / 20 mA Value (URV)</label>
+            <input type="number" step="any" id="urvInput" value="100" class="w-full font-mono text-lg font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition" />
+          </div>
+          <div>
+            <label for="unitInput" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Unit <span class="text-slate-400 font-normal">(Optional)</span></label>
+            <input type="text" id="unitInput" value="bar" placeholder="e.g. bar, m³/h" class="w-full font-mono text-lg font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 transition" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Calculate (3 Synced Boxes) -->
+      <div class="bg-white dark:bg-slate-900 p-5 sm:p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-5">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-400">Step 2 · Type in Any Box to Calculate</h2>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <!-- Box 1: Current (mA) -->
+          <div class="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border-2 border-blue-200 dark:border-blue-800/60 focus-within:border-blue-500 transition">
+            <div class="flex items-center justify-between mb-1">
+              <label for="maInput" class="text-xs font-bold uppercase tracking-wider text-blue-700 dark:text-blue-400">Current</label>
+              <button type="button" data-copy="maInput" class="copy-loop-btn text-slate-400 hover:text-blue-600 p-1 rounded-lg transition" title="Copy mA">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+            <div class="flex items-baseline">
+              <input type="number" step="any" id="maInput" value="12" class="w-full font-mono text-3xl font-bold bg-transparent text-slate-900 dark:text-white focus:outline-none" />
+              <span class="text-sm font-mono font-semibold text-slate-400 ml-1.5">mA</span>
+            </div>
+          </div>
+
+          <!-- Box 2: Percentage (%) -->
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border-2 border-slate-200 dark:border-slate-700/80 focus-within:border-blue-500 transition">
+            <div class="flex items-center justify-between mb-1">
+              <label for="pctInput" class="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Percentage</label>
+              <button type="button" data-copy="pctInput" class="copy-loop-btn text-slate-400 hover:text-blue-600 p-1 rounded-lg transition" title="Copy Percentage">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+            <div class="flex items-baseline">
+              <input type="number" step="any" id="pctInput" value="50" class="w-full font-mono text-3xl font-bold bg-transparent text-slate-900 dark:text-white focus:outline-none" />
+              <span class="text-sm font-mono font-semibold text-slate-400 ml-1.5">%</span>
+            </div>
+          </div>
+
+          <!-- Box 3: Process Value -->
+          <div class="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border-2 border-emerald-200 dark:border-emerald-800/60 focus-within:border-emerald-500 transition">
+            <div class="flex items-center justify-between mb-1">
+              <label for="pvInput" class="text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Process Value</label>
+              <button type="button" data-copy="pvInput" class="copy-loop-btn text-slate-400 hover:text-emerald-600 p-1 rounded-lg transition" title="Copy Process Value">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+              </button>
+            </div>
+            <div class="flex items-baseline">
+              <input type="number" step="any" id="pvInput" value="50" class="w-full font-mono text-3xl font-bold bg-transparent text-slate-900 dark:text-white focus:outline-none" />
+              <span id="pvUnitDisplay" class="text-sm font-mono font-semibold text-slate-400 ml-1.5 truncate max-w-[4rem]">bar</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simple Visual Progress Bar (4 mA to 20 mA) -->
+        <div class="pt-1 space-y-2">
+          <div class="flex justify-between text-xs font-mono text-slate-400">
+            <span>4 mA (0%)</span>
+            <span id="sqrtReadout" class="hidden text-blue-600 dark:text-blue-400 font-medium">DP Input: 50% → Flow: 70.71%</span>
+            <span>20 mA (100%)</span>
+          </div>
+          <div class="h-3 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden border border-slate-200/80 dark:border-slate-700">
+            <div id="maProgressBar" class="h-full bg-blue-600 rounded-full transition-all duration-150" style="width: 50%"></div>
+          </div>
+        </div>
+
+        <!-- Quick Test Buttons -->
+        <div class="pt-2 border-t border-slate-100 dark:border-slate-800">
+          <span class="block text-xs font-medium text-slate-400 mb-2.5">Quick Test Points</span>
+          <div class="grid grid-cols-5 gap-2">
+            <button type="button" data-test-ma="4" class="quick-ma-btn py-2.5 px-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-mono text-xs sm:text-sm font-semibold transition text-center">
+              4 mA<span class="block text-[10px] font-sans opacity-75">0%</span>
+            </button>
+            <button type="button" data-test-ma="8" class="quick-ma-btn py-2.5 px-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-mono text-xs sm:text-sm font-semibold transition text-center">
+              8 mA<span class="block text-[10px] font-sans opacity-75">25%</span>
+            </button>
+            <button type="button" data-test-ma="12" class="quick-ma-btn py-2.5 px-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-mono text-xs sm:text-sm font-semibold transition text-center">
+              12 mA<span class="block text-[10px] font-sans opacity-75">50%</span>
+            </button>
+            <button type="button" data-test-ma="16" class="quick-ma-btn py-2.5 px-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-mono text-xs sm:text-sm font-semibold transition text-center">
+              16 mA<span class="block text-[10px] font-sans opacity-75">75%</span>
+            </button>
+            <button type="button" data-test-ma="20" class="quick-ma-btn py-2.5 px-1 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-slate-700 dark:text-slate-200 font-mono text-xs sm:text-sm font-semibold transition text-center">
+              20 mA<span class="block text-[10px] font-sans opacity-75">100%</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ========================================================= -->
+    <!-- TAB 2: UNIT CONVERTER (CLEAN TWO-BOX CONVERTER)           -->
+    <!-- ========================================================= -->
+    <section id="viewConverter" class="hidden space-y-5">
+
+      <!-- Category Pills -->
+      <div class="grid grid-cols-4 gap-2">
+        <button type="button" data-cat="length" class="cat-pill py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 text-white shadow-sm transition">
+          Length
+        </button>
+        <button type="button" data-cat="pressure" class="cat-pill py-3 px-2 rounded-xl text-xs sm:text-sm font-medium bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 hover:border-blue-400 transition">
+          Pressure
+        </button>
+        <button type="button" data-cat="temperature" class="cat-pill py-3 px-2 rounded-xl text-xs sm:text-sm font-medium bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 hover:border-blue-400 transition">
+          Temperature
+        </button>
+        <button type="button" data-cat="flow" class="cat-pill py-3 px-2 rounded-xl text-xs sm:text-sm font-medium bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 hover:border-blue-400 transition">
+          Flow
+        </button>
+      </div>
+
+      <!-- Main Google-Style Two-Box Converter Card -->
+      <div class="bg-white dark:bg-slate-900 p-5 sm:p-7 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
+        <div class="flex flex-col md:flex-row items-center gap-4">
+
+          <!-- Left / Top Box: FROM -->
+          <div class="w-full flex-1 bg-slate-50 dark:bg-slate-800/70 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+            <div class="p-4">
+              <label for="fromValInput" class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1">From</label>
+              <input type="number" step="any" id="fromValInput" value="1" class="w-full font-mono text-3xl font-bold bg-transparent text-slate-900 dark:text-white focus:outline-none" />
+            </div>
+            <div class="border-t border-slate-200/80 dark:border-slate-700/80 bg-slate-100/80 dark:bg-slate-800 px-3 py-2.5">
+              <select id="fromUnitSelect" aria-label="From Unit" class="w-full bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"></select>
+            </div>
+          </div>
+
+          <!-- Center Circular Swap Button -->
+          <button id="swapBtn" type="button" aria-label="Swap Units" class="w-12 h-12 rounded-full bg-blue-600 hover:bg-blue-500 text-white flex items-center justify-center shadow-md shadow-blue-600/20 shrink-0 transition active:scale-90">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+            </svg>
+          </button>
+
+          <!-- Right / Bottom Box: TO -->
+          <div class="w-full flex-1 bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl border border-blue-200/80 dark:border-blue-800/60 overflow-hidden focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+            <div class="p-4">
+              <div class="flex items-center justify-between mb-1">
+                <label for="toValInput" class="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">To</label>
+                <button id="copyResultBtn" type="button" class="text-xs font-medium text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 flex items-center gap-1 transition" title="Copy Result">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Copy
+                </button>
+              </div>
+              <input type="number" step="any" id="toValInput" class="w-full font-mono text-3xl font-bold bg-transparent text-blue-700 dark:text-blue-300 focus:outline-none" />
+            </div>
+            <div class="border-t border-blue-200/60 dark:border-blue-800/50 bg-blue-100/50 dark:bg-slate-800 px-3 py-2.5">
+              <select id="toUnitSelect" aria-label="To Unit" class="w-full bg-transparent text-sm font-semibold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer"></select>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Optional Collapsible "View all converted units" -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
+        <button id="toggleAllUnitsBtn" type="button" class="w-full px-5 py-4 flex items-center justify-between text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition">
+          <span>View all converted units</span>
+          <svg id="chevronIcon" class="w-4 h-4 text-slate-400 transition-transform duration-200" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+
+        <div id="allUnitsContainer" class="hidden border-t border-slate-100 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800/80">
+          <!-- Populated dynamically when expanded -->
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    (function () {
+      'use strict';
+
+      // ==========================================
+      // 1. CLEAN NUMBER FORMATTING
+      // ==========================================
+      // Formats up to 4 decimals and strips unnecessary trailing zeros (e.g., 50.0000 -> 50)
+      function formatClean(num) {
+        if (!Number.isFinite(num)) return '';
+        if (num === 0) return '0';
+        const abs = Math.abs(num);
+        if (abs < 0.0001 || abs >= 1e11) {
+          return Number(num.toPrecision(5)).toString();
+        }
+        return String(Math.round((num + Number.EPSILON) * 10000) / 10000);
+      }
+
+      // ==========================================
+      // 2. SIMPLE TOAST & CLIPBOARD
+      // ==========================================
+      let toastTimeout = null;
+      function showToast(msg) {
+        const toast = document.getElementById('toast');
+        document.getElementById('toastText').textContent = msg;
+        toast.classList.remove('translate-y-16', 'opacity-0');
+        clearTimeout(toastTimeout);
+        toastTimeout = setTimeout(() => {
+          toast.classList.add('translate-y-16', 'opacity-0');
+        }, 1800);
+      }
+
+      function copyText(text) {
+        if (!text && text !== '0') return;
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(`Copied ${text}`);
+      }
+
+      // ==========================================
+      // 3. UNIT DEFINITIONS
+      // ==========================================
+      const UNITS = {
+        length: [
+          { id: 'mm', label: 'Millimeter (mm)', factor: 0.001 },
+          { id: 'cm', label: 'Centimeter (cm)', factor: 0.01 },
+          { id: 'm', label: 'Meter (m)', factor: 1 },
+          { id: 'km', label: 'Kilometer (km)', factor: 1000 },
+          { id: 'in', label: 'Inch (in)', factor: 0.0254 },
+          { id: 'ft', label: 'Foot (ft)', factor: 0.3048 },
+          { id: 'yd', label: 'Yard (yd)', factor: 0.9144 },
+          { id: 'mi', label: 'Mile (mi)', factor: 1609.344 },
+          { id: 'nmi', label: 'Nautical Mile (nmi)', factor: 1852 },
+          { id: 'um', label: 'Micrometer (µm)', factor: 1e-6 }
+        ],
+        pressure: [
+          { id: 'bar', label: 'Bar', factor: 100000 },
+          { id: 'mbar', label: 'Millibar (mbar)', factor: 100 },
+          { id: 'pa', label: 'Pascal (Pa)', factor: 1 },
+          { id: 'kpa', label: 'Kilopascal (kPa)', factor: 1000 },
+          { id: 'mpa', label: 'Megapascal (MPa)', factor: 1e6 },
+          { id: 'psi', label: 'PSI', factor: 6894.757293168 },
+          { id: 'kgcm2', label: 'kg/cm²', factor: 98066.5 },
+          { id: 'atm', label: 'Atmosphere (atm)', factor: 101325 },
+          { id: 'mmhg', label: 'mmHg', factor: 133.322387415 },
+          { id: 'inhg', label: 'inHg', factor: 3386.388640341 },
+          { id: 'mmh2o', label: 'mmH₂O', factor: 9.80665 },
+          { id: 'inh2o', label: 'inH₂O', factor: 249.08891 }
+        ],
+        temperature: [
+          { id: 'C', label: 'Celsius (°C)' },
+          { id: 'F', label: 'Fahrenheit (°F)' },
+          { id: 'K', label: 'Kelvin (K)' },
+          { id: 'R', label: 'Rankine (°R)' }
+        ],
+        flow: [
+          { id: 'm3h', label: 'm³/h', factor: 1 / 3600 },
+          { id: 'm3min', label: 'm³/min', factor: 1 / 60 },
+          { id: 'm3s', label: 'm³/s', factor: 1 },
+          { id: 'lmin', label: 'L/min (LPM)', factor: 0.001 / 60 },
+          { id: 'ls', label: 'L/s', factor: 0.001 },
+          { id: 'lh', label: 'L/h', factor: 0.001 / 3600 },
+          { id: 'gpm_us', label: 'GPM (US)', factor: 0.003785411784 / 60 },
+          { id: 'gpm_uk', label: 'GPM (UK)', factor: 0.00454609 / 60 },
+          { id: 'cfm', label: 'CFM (ft³/min)', factor: 0.028316846592 / 60 },
+          { id: 'bpd', label: 'BPD (Barrels/day)', factor: 0.158987294928 / 86400 }
+        ]
+      };
+
+      // ==========================================
+      // 4. STATE
+      // ==========================================
+      const state = {
+        loop: {
+          mode: 'linear', // 'linear' | 'sqrt'
+          lrv: 0,
+          urv: 100,
+          unit: 'bar',
+          ma: 12
+        },
+        conv: {
+          category: 'length',
+          showAll: false,
+          selections: {
+            length: { from: 'm', to: 'cm', val: 1 },
+            pressure: { from: 'bar', to: 'psi', val: 1 },
+            temperature: { from: 'C', to: 'F', val: 25 },
+            flow: { from: 'm3h', to: 'lmin', val: 10 }
+          }
+        }
+      };
+
+      // ==========================================
+      // 5. TAB NAVIGATION & THEME
+      // ==========================================
+      const tabLoopBtn = document.getElementById('tabLoopBtn');
+      const tabConvBtn = document.getElementById('tabConvBtn');
+      const viewLoop = document.getElementById('viewLoop');
+      const viewConverter = document.getElementById('viewConverter');
+
+      function switchMainTab(tab) {
+        const activeTabStyle = ['bg-white', 'dark:bg-slate-900', 'text-blue-600', 'dark:text-blue-400', 'shadow-sm', 'font-semibold'];
+        const inactiveTabStyle = ['text-slate-600', 'dark:text-slate-400', 'hover:text-slate-900', 'dark:hover:text-white', 'font-medium'];
+
+        if (tab === 'loop') {
+          tabLoopBtn.classList.add(...activeTabStyle);
+          tabLoopBtn.classList.remove(...inactiveTabStyle);
+          tabConvBtn.classList.remove(...activeTabStyle);
+          tabConvBtn.classList.add(...inactiveTabStyle);
+          viewLoop.classList.remove('hidden');
+          viewConverter.classList.add('hidden');
+        } else {
+          tabConvBtn.classList.add(...activeTabStyle);
+          tabConvBtn.classList.remove(...inactiveTabStyle);
+          tabLoopBtn.classList.remove(...activeTabStyle);
+          tabLoopBtn.classList.add(...inactiveTabStyle);
+          viewConverter.classList.remove('hidden');
+          viewLoop.classList.add('hidden');
+          loadConverterCategory(state.conv.category);
+        }
+      }
+
+      tabLoopBtn.addEventListener('click', () => switchMainTab('loop'));
+      tabConvBtn.addEventListener('click', () => switchMainTab('converter'));
+
+      document.getElementById('themeToggle').addEventListener('click', () => {
+        document.documentElement.classList.toggle('dark');
+      });
+
+      // ==========================================
+      // 6. 4-20 mA CALCULATOR LOGIC
+      // ==========================================
+      const modeLinearBtn = document.getElementById('modeLinear');
+      const modeSqrtBtn = document.getElementById('modeSqrt');
+      const modeHelperText = document.getElementById('modeHelperText');
+      const lrvInput = document.getElementById('lrvInput');
+      const urvInput = document.getElementById('urvInput');
+      const unitInput = document.getElementById('unitInput');
+      const maInput = document.getElementById('maInput');
+      const pctInput = document.getElementById('pctInput');
+      const pvInput = document.getElementById('pvInput');
+      const pvUnitDisplay = document.getElementById('pvUnitDisplay');
+      const maProgressBar = document.getElementById('maProgressBar');
+      const sqrtReadout = document.getElementById('sqrtReadout');
+
+      function setLoopMode(mode) {
+        state.loop.mode = mode;
+        if (mode === 'linear') {
+          modeLinearBtn.className = 'px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-blue-600 text-white shadow-sm transition';
+          modeSqrtBtn.className = 'px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition';
+          modeHelperText.textContent = 'Standard direct proportional scaling';
+          sqrtReadout.classList.add('hidden');
+        } else {
+          modeSqrtBtn.className = 'px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold bg-blue-600 text-white shadow-sm transition';
+          modeLinearBtn.className = 'px-4 py-2 rounded-lg text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition';
+          modeHelperText.textContent = 'Differential pressure (DP) flow extraction';
+          sqrtReadout.classList.remove('hidden');
+        }
+        updateFromMa(state.loop.ma, 'mode');
+      }
+
+      function updateProgressBar(ma, dpPct, flowPct) {
+        const clampedPct = Math.min(100, Math.max(0, ((ma - 4) / 16) * 100));
+        maProgressBar.style.width = `${clampedPct}%`;
+        if (state.loop.mode === 'sqrt') {
+          sqrtReadout.textContent = `DP Input: ${formatClean(dpPct)}% → Flow: ${formatClean(flowPct)}%`;
+        }
+      }
+
+      function updateFromMa(val, source = 'ma') {
+        const ma = parseFloat(val);
+        if (isNaN(ma)) return;
+        state.loop.ma = ma;
+
+        const { lrv, urv, mode } = state.loop;
+        const span = urv - lrv;
+        const linearFrac = (ma - 4) / 16;
+        const effFrac = mode === 'sqrt'
+          ? (linearFrac >= 0 ? Math.sqrt(linearFrac) : -Math.sqrt(Math.abs(linearFrac)))
+          : linearFrac;
+
+        const pct = effFrac * 100;
+        const pv = lrv + effFrac * span;
+
+        if (source !== 'ma') maInput.value = formatClean(ma);
+        if (source !== 'pct') pctInput.value = formatClean(pct);
+        if (source !== 'pv') pvInput.value = formatClean(pv);
+
+        updateProgressBar(ma, linearFrac * 100, pct);
+      }
+
+      function updateFromPct(val) {
+        const pct = parseFloat(val);
+        if (isNaN(pct)) return;
+
+        const { lrv, urv, mode } = state.loop;
+        const span = urv - lrv;
+        const frac = pct / 100;
+        const linearFrac = mode === 'sqrt'
+          ? (frac >= 0 ? frac * frac : -(frac * frac))
+          : frac;
+
+        const ma = 4 + 16 * linearFrac;
+        const pv = lrv + frac * span;
+
+        state.loop.ma = ma;
+        maInput.value = formatClean(ma);
+        pvInput.value = formatClean(pv);
+
+        updateProgressBar(ma, linearFrac * 100, pct);
+      }
+
+      function updateFromPv(val) {
+        const pv = parseFloat(val);
+        if (isNaN(pv)) return;
+
+        const { lrv, urv, mode } = state.loop;
+        const span = urv - lrv;
+        const frac = span !== 0 ? (pv - lrv) / span : 0;
+        const linearFrac = mode === 'sqrt'
+          ? (frac >= 0 ? frac * frac : -(frac * frac))
+          : frac;
+
+        const ma = 4 + 16 * linearFrac;
+        const pct = frac * 100;
+
+        state.loop.ma = ma;
+        maInput.value = formatClean(ma);
+        pctInput.value = formatClean(pct);
+
+        updateProgressBar(ma, linearFrac * 100, pct);
+      }
+
+      modeLinearBtn.addEventListener('click', () => setLoopMode('linear'));
+      modeSqrtBtn.addEventListener('click', () => setLoopMode('sqrt'));
+
+      lrvInput.addEventListener('input', () => {
+        const v = parseFloat(lrvInput.value);
+        state.loop.lrv = isNaN(v) ? 0 : v;
+        updateFromMa(state.loop.ma, 'range');
+      });
+
+      urvInput.addEventListener('input', () => {
+        const v = parseFloat(urvInput.value);
+        state.loop.urv = isNaN(v) ? 0 : v;
+        updateFromMa(state.loop.ma, 'range');
+      });
+
+      unitInput.addEventListener('input', () => {
+        state.loop.unit = unitInput.value.trim();
+        pvUnitDisplay.textContent = state.loop.unit || 'unit';
+      });
+
+      maInput.addEventListener('input', (e) => updateFromMa(e.target.value, 'ma'));
+      pctInput.addEventListener('input', (e) => updateFromPct(e.target.value));
+      pvInput.addEventListener('input', (e) => updateFromPv(e.target.value));
+
+      // Quick Test Buttons (4, 8, 12, 16, 20 mA)
+      document.querySelectorAll('.quick-ma-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const testMa = parseFloat(btn.getAttribute('data-test-ma'));
+          updateFromMa(testMa, 'quick');
+        });
+      });
+
+      // Reset Loop Calculator
+      document.getElementById('resetLoopBtn').addEventListener('click', () => {
+        state.loop = { mode: 'linear', lrv: 0, urv: 100, unit: 'bar', ma: 12 };
+        lrvInput.value = '0';
+        urvInput.value = '100';
+        unitInput.value = 'bar';
+        pvUnitDisplay.textContent = 'bar';
+        setLoopMode('linear');
+        updateFromMa(12, 'reset');
+      });
+
+      // Copy buttons in Loop Calculator
+      document.querySelectorAll('.copy-loop-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = document.getElementById(btn.getAttribute('data-copy'));
+          if (target) copyText(target.value);
+        });
+      });
+
+      // ==========================================
+      // 7. UNIT CONVERTER LOGIC
+      // ==========================================
+      const fromValInput = document.getElementById('fromValInput');
+      const toValInput = document.getElementById('toValInput');
+      const fromUnitSelect = document.getElementById('fromUnitSelect');
+      const toUnitSelect = document.getElementById('toUnitSelect');
+      const swapBtn = document.getElementById('swapBtn');
+      const toggleAllUnitsBtn = document.getElementById('toggleAllUnitsBtn');
+      const allUnitsContainer = document.getElementById('allUnitsContainer');
+      const chevronIcon = document.getElementById('chevronIcon');
+
+      function convertTemp(val, fromId, toId) {
+        if (fromId === toId) return val;
+        let c = val;
+        if (fromId === 'F') c = (val - 32) * (5 / 9);
+        else if (fromId === 'K') c = val - 273.15;
+        else if (fromId === 'R') c = (val - 491.67) * (5 / 9);
+
+        if (toId === 'C') return c;
+        if (toId === 'F') return c * (9 / 5) + 32;
+        if (toId === 'K') return c + 273.15;
+        if (toId === 'R') return (c + 273.15) * (9 / 5);
+        return val;
+      }
+
+      function computeConversion(cat, val, fromId, toId) {
+        if (!Number.isFinite(val)) return 0;
+        if (cat === 'temperature') return convertTemp(val, fromId, toId);
+
+        const list = UNITS[cat];
+        const uFrom = list.find(u => u.id === fromId);
+        const uTo = list.find(u => u.id === toId);
+        if (!uFrom || !uTo) return 0;
+
+        return (val * uFrom.factor) / uTo.factor;
+      }
+
+      function loadConverterCategory(cat) {
+        state.conv.category = cat;
+        const sel = state.conv.selections[cat];
+        const list = UNITS[cat];
+
+        // Update Category Pill Styles
+        document.querySelectorAll('.cat-pill').forEach(pill => {
+          if (pill.getAttribute('data-cat') === cat) {
+            pill.className = 'cat-pill py-3 px-2 rounded-xl text-xs sm:text-sm font-semibold bg-blue-600 text-white shadow-sm transition';
+          } else {
+            pill.className = 'cat-pill py-3 px-2 rounded-xl text-xs sm:text-sm font-medium bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 hover:border-blue-400 transition';
+          }
+        });
+
+        // Populate Dropdowns
+        const optionsHtml = list.map(u => `<option value="${u.id}" class="bg-white dark:bg-slate-900">${u.label}</option>`).join('');
+        fromUnitSelect.innerHTML = optionsHtml;
+        toUnitSelect.innerHTML = optionsHtml;
+
+        fromUnitSelect.value = sel.from;
+        toUnitSelect.value = sel.to;
+        fromValInput.value = sel.val;
+
+        recalcConverter('from');
+      }
+
+      function recalcConverter(direction = 'from') {
+        const cat = state.conv.category;
+        const sel = state.conv.selections[cat];
+        sel.from = fromUnitSelect.value;
+        sel.to = toUnitSelect.value;
+
+        if (direction === 'from') {
+          const raw = parseFloat(fromValInput.value);
+          sel.val = isNaN(raw) ? 0 : raw;
+          const res = computeConversion(cat, sel.val, sel.from, sel.to);
+          toValInput.value = isNaN(raw) ? '' : formatClean(res);
+        } else {
+          const rawTo = parseFloat(toValInput.value);
+          const rev = isNaN(rawTo) ? 0 : computeConversion(cat, rawTo, sel.to, sel.from);
+          sel.val = rev;
+          fromValInput.value = isNaN(rawTo) ? '' : formatClean(rev);
+        }
+
+        if (state.conv.showAll) {
+          renderAllUnitsList();
+        }
+      }
+
+      function renderAllUnitsList() {
+        const cat = state.conv.category;
+        const sel = state.conv.selections[cat];
+        const list = UNITS[cat];
+
+        allUnitsContainer.innerHTML = list.map(u => {
+          const val = computeConversion(cat, sel.val, sel.from, u.id);
+          const formatted = formatClean(val);
+          return `
+            <div data-copy-item="${formatted}" class="all-unit-row px-5 py-3.5 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer transition group">
+              <span class="text-sm text-slate-600 dark:text-slate-300">${u.label}</span>
+              <div class="flex items-center gap-3">
+                <span class="font-mono text-base font-bold text-slate-900 dark:text-white">${formatted}</span>
+                <span class="text-slate-400 group-hover:text-blue-600 transition" title="Copy">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                </span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Category Pill Clicks
+      document.querySelectorAll('.cat-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+          loadConverterCategory(pill.getAttribute('data-cat'));
+        });
+      });
+
+      // Converter Inputs & Dropdowns
+      fromValInput.addEventListener('input', () => recalcConverter('from'));
+      toValInput.addEventListener('input', () => recalcConverter('to'));
+      fromUnitSelect.addEventListener('change', () => recalcConverter('from'));
+      toUnitSelect.addEventListener('change', () => recalcConverter('from'));
+
+      // Swap Button
+      swapBtn.addEventListener('click', () => {
+        const temp = fromUnitSelect.value;
+        fromUnitSelect.value = toUnitSelect.value;
+        toUnitSelect.value = temp;
+        recalcConverter('from');
+      });
+
+      // Copy Result Button
+      document.getElementById('copyResultBtn').addEventListener('click', () => {
+        copyText(toValInput.value);
+      });
+
+      // Collapsible "View all converted units"
+      toggleAllUnitsBtn.addEventListener('click', () => {
+        state.conv.showAll = !state.conv.showAll;
+        if (state.conv.showAll) {
+          allUnitsContainer.classList.remove('hidden');
+          chevronIcon.classList.add('rotate-180');
+          renderAllUnitsList();
+        } else {
+          allUnitsContainer.classList.add('hidden');
+          chevronIcon.classList.remove('rotate-180');
+        }
+      });
+
+      // Copy from expanded list
+      allUnitsContainer.addEventListener('click', (e) => {
+        const row = e.target.closest('.all-unit-row');
+        if (row) copyText(row.getAttribute('data-copy-item'));
+      });
+
+      // ==========================================
+      // 8. INITIALIZE
+      // ==========================================
+      updateFromMa(12, 'init');
+
+    })();
+  </script>
+  <script>
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) document.documentElement.classList.add("dark");
+    if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(function(){});
+  </script>
+</body>
+</html>
